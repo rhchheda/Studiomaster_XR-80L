@@ -34,9 +34,18 @@
   }
 
   *{box-sizing:border-box}
-  body{background:var(--ground);color:var(--ink);
+  
+  /* Disable text selection across the entire page */
+  body {
+    background:var(--ground);color:var(--ink);
     font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-    line-height:1.5;-webkit-font-smoothing:antialiased;}
+    line-height:1.5;-webkit-font-smoothing:antialiased;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
   .sheet{max-width:1000px;margin:0 auto;padding:32px 26px 44px;}
 
   .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;
@@ -150,15 +159,88 @@
     24%{transform:scale(1)}36%{transform:scale(1.32)}48%{transform:scale(1)}}
   @media (prefers-reduced-motion:reduce){.made .heart{animation:none;}}
 
+  /* Toast Styling */
+  #custom-toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  }
+
+  .custom-toast {
+    background: var(--surface, #191E1A);
+    color: var(--ink, #EAF0EA);
+    border: 1px solid var(--line, #2E352F);
+    border-left: 4px solid var(--teal, #43C0A9);
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    max-width: 380px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+  }
+
+  .custom-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .toast-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .toast-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .toast-title {
+    font-family: "Archivo", sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--teal, #43C0A9);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .toast-msg {
+    font-size: 12.5px;
+    color: var(--ink-soft, #A0A9A2);
+    margin-top: 2px;
+  }
+
+  .toast-msg code {
+    font-family: "IBM Plex Mono", monospace;
+    background: var(--surface-2);
+    padding: 2px 4px;
+    border-radius: 4px;
+    color: var(--copper);
+  }
+
   @media (max-width:760px){
     .stats{grid-template-columns:repeat(2,1fr)}
     .compare,.twoup{grid-template-columns:1fr}
     .masthead{grid-template-columns:1fr}.meta{text-align:left}
     .verdict{grid-template-columns:1fr}
+    #custom-toast-container { left: 16px; right: 16px; bottom: 16px; }
+    .custom-toast { min-width: auto; width: 100%; }
   }
   @media print{
     body{background:#fff}.sheet{padding:0}
     .stat,.panel,.block,.costwrap,.verdict{box-shadow:none}
+    #custom-toast-container { display: none !important; }
     @page{margin:12mm}
   }
 </style>
@@ -334,4 +416,95 @@
     <span class="sep">&middot;</span>
     <span>Last updated 09-Sep-2026 11:18 PM</span>
   </div>
+
 </div>
+
+<!-- HTML Toast Container & Protection Script -->
+<div id="custom-toast-container"></div>
+
+<script>
+  (function() {
+    function showToast(icon, title, htmlMessage) {
+      const container = document.getElementById('custom-toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'custom-toast';
+      
+      toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-content">
+          <div class="toast-title">${title}</div>
+          <div class="toast-msg">${htmlMessage}</div>
+        </div>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => toast.classList.add('show'), 10);
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // 1. Context Menu (Right Click) Intercept
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      showToast(
+        '🖱️', 
+        'Right-Click Restricted', 
+        'Looking for the secret menu? It\'s mostly just <code>&lt;div&gt;</code> tags down here.'
+      );
+    });
+
+    // 2. Disable All Copying (Clipboard Event, Key Shortcuts, Dragging)
+    document.addEventListener('copy', function(e) {
+      e.preventDefault();
+      // Clear clipboard buffer explicitly
+      if (e.clipboardData) {
+        e.clipboardData.setData('text/plain', '');
+      }
+      showToast(
+        '🚫', 
+        'Copy Action Disabled', 
+        'Nice try! Text selection and copying are completely disabled on this document.'
+      );
+    });
+
+    // Disable text selection start via mouse dragging
+    document.addEventListener('selectstart', function(e) {
+      e.preventDefault();
+    });
+
+    // Disable drag-and-drop of text elements
+    document.addEventListener('dragstart', function(e) {
+      e.preventDefault();
+    });
+
+    // 3. F12, Inspect, View Source, and Ctrl+C Shortcuts Intercept
+    document.addEventListener('keydown', function(e) {
+      const isF12 = e.key === 'F12';
+      const isInspect = e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c');
+      const isViewSource = e.ctrlKey && (e.key === 'U' || e.key === 'u');
+      const isCopyKey = (e.ctrlKey || e.metaKey) && (e.key === 'C' || e.key === 'c');
+
+      if (isF12 || isInspect || isViewSource) {
+        e.preventDefault();
+        showToast(
+          '🛠️', 
+          'Dev Tools Shielded', 
+          'Nice try, Inspector Gadget! The source code is shy.'
+        );
+      }
+
+      if (isCopyKey) {
+        e.preventDefault();
+        showToast(
+          '🚫', 
+          'Copy Action Disabled', 
+          'Nice try! Text selection and copying are completely disabled on this document.'
+        );
+      }
+    });
+  })();
+</script>
