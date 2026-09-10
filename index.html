@@ -147,10 +147,12 @@
   .assump b{color:var(--ink-soft);font-weight:600;}
   a{color:var(--teal);text-decoration-thickness:1px;text-underline-offset:2px;}
 
-  .made{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);
+  .made{position:sticky;bottom:0;z-index:5;margin-top:18px;padding:11px 0;
+    border-top:1px solid var(--line);background:var(--ground);
     display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
     font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-faint);
     letter-spacing:.03em;text-align:center;}
+  @media print{.made{position:static;}}
   .made .sep{opacity:.5;}
   .made .who{color:var(--ink-soft);font-weight:600;}
   .made .heart{color:#e0245e;display:inline-block;font-size:12px;
